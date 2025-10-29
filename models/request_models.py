@@ -10,3 +10,5 @@ class ChatRequest(BaseModel):
     # The client can send "miki", "alex", or "kaito".
     persona: str
 
+    
+
