@@ -1,4 +1,3 @@
-
 from .exceptions import (
     AppException,
     PersonaNotFoundException,
@@ -9,6 +8,10 @@ from .logging import (
     logger
 )
 
+from .helper import (
+    filter_allowed_text
+)
+
 __all__ = [
     # From exceptions.py
     "AppException",
@@ -16,5 +19,8 @@ __all__ = [
     "TemplateLoadException",
 
     # From logging.py
-    "logger"
+    "logger",
+
+    # From helper.py
+    "filter_allowed_text"
 ]
