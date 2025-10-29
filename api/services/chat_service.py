@@ -1,5 +1,5 @@
 from agents.conversation_agent import conversation_chain
-from utils import AppException, logger
+from utils import AppException, logger, filter_allowed_text
 
 
 async def handle_chat_stream(session_id: str, user_input: str, persona: str):
@@ -22,7 +22,8 @@ async def handle_chat_stream(session_id: str, user_input: str, persona: str):
                 },
                 config=config
         ):
-            yield chunk.content
+            clean_chunk = filter_allowed_text(chunk.content)
+            yield clean_chunk
 
         logger.info(f"Stream for session '{session_id}' completed successfully.")
 
