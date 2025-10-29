@@ -1,0 +1,15 @@
+# Environment variables
+.env
+
+# IDE configuration
+# Ignores all files and subfolders for PyCharm/JetBrains IDEs.
+# This single line will ignore all the .xml, .iml, and .gitignore.idea files.
+.idea/
+
+# Python cache
+# Ignores the bytecode cache folders that Python generates.
+__pycache__/
+*.pyc
+
+# Virtual environment
+.venv/
