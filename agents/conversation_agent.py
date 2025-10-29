@@ -1,12 +1,15 @@
-import os
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.prompt_values import PromptValue
 from langchain_core.runnables import RunnableWithMessageHistory, RunnableLambda
+from langchain_core.messages import BaseMessage
 
 from config import MEMORY_WINDOW_SIZE, PERSONA_PROMPTS
 from memory.short_term import get_session_history
 from llm import llm as model
+from utils import PersonaNotFoundException, TemplateLoadException, logger
 
 # --- Jinja Setup ---
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -17,54 +20,74 @@ jinja_env = Environment(
     autoescape=select_autoescape(['html', 'xml'])
 )
 
-
 # --- Dynamic Prompt Loading Function ---
 def load_persona_prompt(persona_name: str) -> str:
     """
     Loads and renders the system prompt for the given persona.
     """
-    # 1. Find the filename
-    # Use "alex" as a safe default if the persona is not found
-    prompt_filename = PERSONA_PROMPTS.get(persona_name, PERSONA_PROMPTS["alex"])
+    prompt_filename = PERSONA_PROMPTS.get(persona_name)
 
-    # 2. Şablona aktarılacak değişkenleri tanımla
+    if not prompt_filename:
+        logger.error(f"PersonaNotFoundException: Persona '{persona_name}' not found in config.py.")
+        raise PersonaNotFoundException(persona=persona_name)
+
     template_variables = {
         "user_name": "Sinan"
     }
 
-    # 3. Seçilen sistem prompt'unu yükle ve render et
     try:
         template = jinja_env.get_template(prompt_filename)
-        return template.render(template_variables)
+        rendered_prompt = template.render(template_variables)
+
+        logger.info(f"Successfully loaded and rendered template '{prompt_filename}' for persona '{persona_name}'.")
+        return rendered_prompt
+
     except Exception as e:
-        print(f"Uyarı: Jinja şablonu '{prompt_filename}' yüklenemedi. Hata: {e}")
-        raise e
+        logger.error(
+            f"TemplateLoadException: Failed to load/render template '{prompt_filename}'.",
+            exc_info=True
+        )
+        raise TemplateLoadException(filename=prompt_filename, error=e)
 
-# --- NEW: Chain Helper Functions ---
+
+# --- Chain Helper Functions ---
+
 def add_system_prompt(data):
-    """
-    RunnableLambda function to load and add the
-    'system_prompt' to the data dictionary.
-    """
-    # Get the persona from the input
-    persona = data.get("persona", "alex")  # Default to 'alex'
-
-    # Load the prompt and add it to the dictionary
+    persona = data.get("persona", "alex")
     data["system_prompt"] = load_persona_prompt(persona)
     return data
 
 
 def trim_history(data):
-    """
-    (This is your existing function, unchanged)
-    """
     if "history" in data:
         data["history"] = data["history"][-MEMORY_WINDOW_SIZE:]
     return data
 
 
-# --- 1. Çekirdek Zinciri Tanımla (Prompt + Model) ---
+# --- NEW: Logging Functions for the Chain ---
 
+def log_prompt_to_model(prompt_value: PromptValue) -> PromptValue:
+    """
+    RunnableLambda function to log the fully formatted prompt
+    (as a list of messages) before it is sent to the LLM.
+    """
+    messages = prompt_value.to_messages()
+    logger.debug(f"Sending prompt to Ollama with {len(messages)} messages:")
+    for msg in messages:
+        logger.debug(f"  [{msg.type.upper()}] {msg.content!r}...")
+    return prompt_value
+
+
+def log_final_response(ai_message: BaseMessage) -> BaseMessage:
+    """
+    RunnableLambda function to log the final, complete AI response
+    after all streaming chunks are combined.
+    """
+    logger.debug(f"Received final response from Ollama: {ai_message.content!r}")
+    return ai_message
+
+
+# --- 1. Core Chain Definition ---
 prompt = ChatPromptTemplate.from_messages(
     [
         ("system", "{system_prompt}"),
@@ -73,22 +96,22 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-# --- 3. Zinciri birleştir (REBUILT) ---
-
+# --- 2. Assemble the Chain (UPDATED) ---
+# We insert our logging functions into the chain.
 chain = (
-        RunnableLambda(add_system_prompt)  # Input -> adds 'system_prompt'
-        | RunnableLambda(trim_history)  # Input -> trims 'history'
-        | prompt  # Input -> formatted prompt
-        | model  # Prompt -> AIMessage
+        RunnableLambda(add_system_prompt)
+        | RunnableLambda(trim_history)
+        | prompt
+        | RunnableLambda(log_prompt_to_model)
+        | model
+        | RunnableLambda(log_final_response)
 )
 
-# --- 4. Zinciri Hafıza ile Sar (REBUILT) ---
+# --- 3. Wrap the Chain with Memory ---
 conversation_chain = RunnableWithMessageHistory(
     chain,
     get_session_history,
     input_messages_key="input",
     history_messages_key="history",
-    # This tells the memory wrapper to allow the 'persona' key
-    # to be passed through to the 'chain' defined above.
     chain_input_passthrough_keys=["persona"],
 )
