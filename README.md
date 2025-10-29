@@ -1,2 +1,0 @@
-# Mentorluk-Projesi
-Mentorluk Projesi
