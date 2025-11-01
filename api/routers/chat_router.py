@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, BackgroundTasks
 from fastapi.responses import StreamingResponse
 
 from api.services import chat_service
@@ -6,24 +6,22 @@ from models.request_models import ChatRequest
 from models.response_models import ChatResponse
 from utils import AppException, logger
 
-# Create a new router
 router = APIRouter()
 
 
 @router.post("/chat/stream", tags=["Chat"])
-async def chat_stream(request: ChatRequest):
+async def chat_stream(request: ChatRequest, background_tasks: BackgroundTasks):
     """
     API endpoint for streaming chat responses.
     """
 
-    # 1. Call the service to get the async generator
     generator = chat_service.handle_chat_stream(
         session_id=request.session_id,
+        user_id=request.user_id,
         user_input=request.input,
-        persona=request.persona
+        persona=request.persona,
+        background_tasks=background_tasks
     )
-
-    # 2. Return the generator in a StreamingResponse
     return StreamingResponse(
         generator,
         media_type="text/plain; charset=utf-8"
@@ -31,20 +29,18 @@ async def chat_stream(request: ChatRequest):
 
 
 @router.post("/chat/invoke", response_model=ChatResponse, tags=["Chat"])
-async def chat_invoke(request: ChatRequest):
+async def chat_invoke(request: ChatRequest, background_tasks: BackgroundTasks):
     """
     API endpoint for non-streaming (invoke) chat responses.
-    Exceptions are caught here and returned as proper HTTP errors.
     """
     try:
-        # 1. Call the invoke service and await the final string
         response_text = await chat_service.handle_chat_invoke(
             session_id=request.session_id,
+            user_id=request.user_id,
             user_input=request.input,
-            persona=request.persona
+            persona=request.persona,
+            background_tasks=background_tasks
         )
-
-        # 2. Return the successful JSON response
         return ChatResponse(response=response_text)
 
     except AppException as e:
@@ -59,3 +55,4 @@ async def chat_invoke(request: ChatRequest):
             exc_info=True
         )
         raise HTTPException(status_code=500, detail="An unexpected internal server error occurred.")
+

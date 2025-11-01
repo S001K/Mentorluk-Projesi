@@ -1,14 +1,18 @@
 from pydantic import BaseModel
-from config import DEFAULT_SESSION_ID
 
 class ChatRequest(BaseModel):
     """
-    Pydantic model for the chat request body.
+    Pydantic model for the chat request.
     """
     input: str
-    session_id: str = DEFAULT_SESSION_ID
-    # The client can send "miki", "alex", or "kaito".
+    session_id: str
+    user_id: str
     persona: str
 
-    
-
+class MemoryRequest(BaseModel):
+    """
+    Pydantic model for adding a new memory.
+    """
+    text: str
+    user_id: str
+    persona: str
