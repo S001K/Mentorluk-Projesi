@@ -147,3 +147,13 @@ curl -X POST "http://120.0.0.1:8000/api/chat/invoke" \
            "persona": "miki"
          }'
 ```
+
+Example .env:
+
+# DB env
+REDIS_URL=
+DATABASE_URL=
+# LLM env
+LLM_PROVIDER=openrouter
+LLM_MODEL=meta-llama/llama-3.3-70b-instruct:free
+OPENROUTER_API_KEY=
