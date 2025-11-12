@@ -6,10 +6,13 @@ from langchain_core.prompt_values import PromptValue
 from langchain_core.runnables import RunnableWithMessageHistory, RunnableLambda
 from langchain_core.messages import BaseMessage
 
-from config import MEMORY_WINDOW_SIZE, PERSONA_PROMPTS
+from config import SETTINGS
+from config import llm as model
 from memory.short_term import get_session_history
-from llm import llm as model
 from utils import PersonaNotFoundException, TemplateLoadException, logger
+
+memory_window_size = SETTINGS.MEMORY_WINDOW_SIZE
+persona_prompts = SETTINGS.PERSONA_PROMPTS
 
 # --- Jinja Setup ---
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +28,7 @@ def load_persona_prompt(persona_name: str) -> str:
     """
     Loads and renders the system prompt for the given persona.
     """
-    prompt_filename = PERSONA_PROMPTS.get(persona_name)
+    prompt_filename = persona_prompts.get(persona_name)
 
     if not prompt_filename:
         logger.error(f"PersonaNotFoundException: Persona '{persona_name}' not found in config.py.")
@@ -60,7 +63,7 @@ def add_system_prompt(data):
 
 def trim_history(data):
     if "history" in data:
-        data["history"] = data["history"][-MEMORY_WINDOW_SIZE:]
+        data["history"] = data["history"][-memory_window_size:]
     return data
 
 
