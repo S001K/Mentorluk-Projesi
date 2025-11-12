@@ -2,7 +2,7 @@
 LLM Loader
 
 This module reads the environment configuration from config.py,
-selects the correct LLM provider (Ollama or OpenRouter),
+selects the correct LLM provider (Ollama, OpenRouter, or Groq),
 and initializes a single 'llm' instance for the application.
 """
 
@@ -11,7 +11,8 @@ from langchain_openai import ChatOpenAI
 from config import (
     LLM_PROVIDER,
     LLM_MODEL,
-    OPENROUTER_API_KEY
+    OPENROUTER_API_KEY,
+    GROQ_API_KEY
 )
 from utils import logger
 
@@ -42,6 +43,24 @@ elif LLM_PROVIDER == "openrouter":
         logger.error(f"Failed to connect to OpenRouter. Check API key and model name. Error: {e}")
         raise
 
+elif LLM_PROVIDER == "groq":
+    if not GROQ_API_KEY:
+        logger.error("LLM_PROVIDER is 'groq' but GROQ_API_KEY is not set.")
+        raise ValueError("GROQ_API_KEY is missing.")
+
+    try:
+        logger.info(f"Initializing LLM with provider: 'groq', model: '{LLM_MODEL}'")
+        # Groq, OpenAI uyumlu olduğu için ChatOpenAI sınıfını kullanıyoruz
+        llm = ChatOpenAI(
+            model=LLM_MODEL,
+            api_key=GROQ_API_KEY,
+            base_url="https://api.groq.com/openai/v1",
+            streaming=True,
+        )
+    except Exception as e:
+        logger.error(f"Failed to connect to Groq. Check API key and model name. Error: {e}")
+        raise
+
 else:
-    logger.error(f"Invalid LLM_PROVIDER: '{LLM_PROVIDER}'. Must be 'ollama' or 'openrouter'.")
+    logger.error(f"Invalid LLM_PROVIDER: '{LLM_PROVIDER}'. Must be 'ollama', 'openrouter', or 'groq'.")
     raise ValueError(f"Invalid LLM_PROVIDER specified in config.")

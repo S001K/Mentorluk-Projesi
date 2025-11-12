@@ -28,3 +28,5 @@ PERSONA_PROMPTS = {
     "alex": "conversation_agent_alex_system_prompt.j2",
     "kaito": "conversation_agent_kaito_system_prompt.j2",
 }
+
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
