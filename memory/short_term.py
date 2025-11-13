@@ -1,5 +1,5 @@
-from langchain_redis import RedisChatMessageHistory
-from config import REDIS_URL
+from langchain_community.chat_message_histories import RedisChatMessageHistory
+from config import SETTINGS
 
 def get_session_history(session_id: str) -> RedisChatMessageHistory:
     """
@@ -7,6 +7,6 @@ def get_session_history(session_id: str) -> RedisChatMessageHistory:
     """
     return RedisChatMessageHistory(
         session_id=session_id,
-        redis_url=REDIS_URL,
-        ttl=1800  # History expires after 30 minutes of inactivity
+        url=SETTINGS.REDIS_URL,
+        ttl=SETTINGS.REDIS_TTL_SECONDS
     )
