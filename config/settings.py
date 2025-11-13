@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     REDIS_URL: str
     DEFAULT_SESSION_ID: str
     MEMORY_WINDOW_SIZE: int
+    REDIS_TTL_SECONDS: int = 1800  # 30 minutes by default
 
     # --- Static persona system ---
     PERSONA_PROMPTS: dict[str, str] = {
