@@ -1,10 +1,15 @@
+# utils/logging.py
 import logging
+
 import colorlog
 
+from config import SETTINGS
 
-def setup_logging():
+
+def setup_logging() -> logging.Logger:
     """
     Sets up the logger for colored logging.
+    Log level is read from settings (LOG_LEVEL).
     """
 
     # 1. Define the colored format
@@ -17,14 +22,14 @@ def setup_logging():
     formatter = colorlog.ColoredFormatter(
         log_format,
         log_colors={
-            'DEBUG': 'cyan',
-            'INFO': 'green',
-            'WARNING': 'yellow',
-            'ERROR': 'red',
-            'CRITICAL': 'red,bg_white',
+            "DEBUG": "cyan",
+            "INFO": "green",
+            "WARNING": "yellow",
+            "ERROR": "red",
+            "CRITICAL": "red,bg_white",
         },
         reset=True,
-        style='%'
+        style="%",
     )
 
     # 3. Create the console handler and set the formatter
@@ -34,8 +39,9 @@ def setup_logging():
     # 4. Get the main logger for the project
     app_logger = logging.getLogger("ai_companion")
 
-    # Set the log level to DEBUG to see all messages
-    app_logger.setLevel(logging.DEBUG)
+    # Set the log level based on configuration
+    level = getattr(logging, SETTINGS.LOG_LEVEL.upper(), logging.INFO)
+    app_logger.setLevel(level)
 
     app_logger.addHandler(console_handler)
     app_logger.propagate = False  # Prevent double logging
@@ -47,4 +53,4 @@ def setup_logging():
 logger = setup_logging()
 
 # A debug message to verify the new settings
-logger.debug("Logger 'ai_companion' initialized with color and DEBUG level.")
+logger.debug("Logger 'ai_companion' initialized with color and configured log level.")

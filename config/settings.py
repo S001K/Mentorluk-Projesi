@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from enum import Enum
 from functools import lru_cache
-from typing import Optional
+from typing import Optional, Dict
 
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -18,8 +18,8 @@ class LLMProvider(str, Enum):
 class Settings(BaseSettings):
     """
     Centralized configuration for the application.
-    All values come from `.env` (no hard-coded defaults).
-    Persona prompts remain static in code.
+    All values come from `.env`.
+    Persona prompts remain static in code by default.
     """
 
     # --- LLM Configuration ---
@@ -34,10 +34,13 @@ class Settings(BaseSettings):
     REDIS_URL: str
     DEFAULT_SESSION_ID: str
     MEMORY_WINDOW_SIZE: int
-    REDIS_TTL_SECONDS: int = 1800  # 30 minutes by default
+    REDIS_TTL_SECONDS: int = 1800  # default: 30 minutes
+
+    # --- Logging ---
+    LOG_LEVEL: str = "INFO"
 
     # --- Static persona system ---
-    PERSONA_PROMPTS: dict[str, str] = {
+    PERSONA_PROMPTS: Dict[str, str] = {
         "miki": "conversation_agent_miki_system_prompt.j2",
         "alex": "conversation_agent_alex_system_prompt.j2",
         "kaito": "conversation_agent_kaito_system_prompt.j2",
