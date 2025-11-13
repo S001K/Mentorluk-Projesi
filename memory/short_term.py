@@ -1,5 +1,8 @@
+# memory/short_term.py
 from langchain_community.chat_message_histories import RedisChatMessageHistory
+
 from config import SETTINGS
+
 
 def get_session_history(session_id: str) -> RedisChatMessageHistory:
     """
@@ -8,5 +11,5 @@ def get_session_history(session_id: str) -> RedisChatMessageHistory:
     return RedisChatMessageHistory(
         session_id=session_id,
         url=SETTINGS.REDIS_URL,
-        ttl=SETTINGS.REDIS_TTL_SECONDS
+        ttl=SETTINGS.REDIS_TTL_SECONDS,
     )
